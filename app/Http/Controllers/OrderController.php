@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Cart;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Models\Shipping;
 use App\User;
 use PDF;
@@ -144,9 +145,32 @@ class OrderController extends Controller
             session()->forget('cart');
             session()->forget('coupon');
         }
-        Cart::where('user_id', auth()->user()->id)->where('order_id', null)->update(['order_id' => $order->id]);
+        // create order_items snapshot records (separate table) so order history is preserved
+        $carts = Cart::where('user_id', auth()->user()->id)->where('order_id', null)->get();
+        foreach ($carts as $cart) {
+            // determine snapshot values
+            $productId = $cart->product_id ?? null;
+            $title = $cart->product_title ?? ($cart->product ? $cart->product->title : null);
+            $slug = $cart->product_slug ?? ($cart->product ? $cart->product->slug : null);
+            $photo = $cart->product_photo ?? ($cart->product ? $cart->product->photo : null);
 
-        // dd($users);        
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => $productId,
+                'product_title' => $title,
+                'product_slug' => $slug,
+                'product_photo' => $photo,
+                'price' => $cart->price,
+                'quantity' => $cart->quantity,
+                'amount' => $cart->amount,
+            ]);
+
+            // still attach cart to order for backward compatibility
+            $cart->order_id = $order->id;
+            $cart->save();
+        }
+
+        // dd($users);
         request()->session()->flash('success','Your product successfully placed in order');
         return redirect()->route('home');
     }
@@ -250,17 +274,17 @@ class OrderController extends Controller
             elseif($order->status=="process"){
                 request()->session()->flash('success','Your order is under processing please wait.');
                 return redirect()->route('home');
-    
+
             }
             elseif($order->status=="delivered"){
                 request()->session()->flash('success','Your order is successfully delivered.');
                 return redirect()->route('home');
-    
+
             }
             else{
                 request()->session()->flash('error','Your order canceled. please try again');
                 return redirect()->route('home');
-    
+
             }
         }
         else{

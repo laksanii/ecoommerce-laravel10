@@ -10,6 +10,11 @@ class Order extends Model
     public function cart_info(){
         return $this->hasMany('App\Models\Cart','order_id','id');
     }
+
+    public function order_items()
+    {
+        return $this->hasMany(\App\Models\OrderItem::class, 'order_id', 'id');
+    }
     public static function getAllOrder($id){
         return Order::with('cart_info')->find($id);
     }

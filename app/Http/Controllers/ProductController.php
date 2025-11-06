@@ -42,6 +42,8 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+
+        // dd($request->all());
         $validatedData = $request->validate([
             'title' => 'required|string',
             'summary' => 'required|string',
@@ -58,6 +60,7 @@ class ProductController extends Controller
             'price' => 'required|numeric',
             'discount' => 'nullable|numeric',
         ]);
+
 
         $slug = generateUniqueSlug($request->title, Product::class);
         $validatedData['slug'] = $slug;
