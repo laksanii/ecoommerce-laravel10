@@ -159,3 +159,8 @@ Suggestions & Improvements
 -   Make a service repository pattern to extract business logic and database interaction so controller is more clean and just for receive request then return response
 -   Use API Resources to easyly transform models and model collections into JSON
 -   Add Unit testing
+
+## Implementation Notes
+
+-   Added a new `order_items` table and model (`App/Models/OrderItem`) to store finalized order line items as snapshots.
+-   Checkout flow (`App/Http/Controllers/OrderController::store`) now copies the user's cart rows into `order_items` as immutable snapshots at checkout time.
